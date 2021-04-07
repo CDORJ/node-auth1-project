@@ -16,6 +16,10 @@ const sessionConfig = {
   saveUninitialized: false,
   store: new KnexSessionStore({
     knex: require("../data/db-config.js"),
+    tablename: "sessions",
+    sidfieldname: "sid",
+    createtable: true,
+    clearInterval: 60 * 60 * 1000,
   }),
 };
 
@@ -37,6 +41,8 @@ const server = express();
 server.use(helmet());
 server.use(express.json());
 server.use(cors());
+server.use(session(sessionConfig));
+
 const authRouter = require("./auth/auth-router.js");
 const usersRouter = require("./users/users-router.js");
 

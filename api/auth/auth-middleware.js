@@ -1,3 +1,5 @@
+const Users = require("../users/users-model.js");
+
 module.exports = {
   restricted,
   checkUsernameFree,
@@ -13,7 +15,13 @@ module.exports = {
     "message": "You shall not pass!"
   }
 */
-function restricted() {}
+function restricted(req, res, next) {
+  if (req.session && req.session.user) {
+    next();
+  } else {
+    res.status(401).json({ message: "you shall not pass" });
+  }
+}
 
 /*
   If the username in req.body already exists in the database
@@ -23,7 +31,13 @@ function restricted() {}
     "message": "Username taken"
   }
 */
-function checkUsernameFree() {}
+function checkUsernameFree(req, res, next) {
+  if (req.user) {
+    res.status(422).json({ message: "Username taken" });
+  } else {
+    next();
+  }
+}
 
 /*
   If the username in req.body does NOT exist in the database
@@ -33,7 +47,9 @@ function checkUsernameFree() {}
     "message": "Invalid credentials"
   }
 */
-function checkUsernameExists() {}
+function checkUsernameExists(req, res, next) {
+  
+}
 
 /*
   If password is missing from req.body, or if it's 3 chars or shorter

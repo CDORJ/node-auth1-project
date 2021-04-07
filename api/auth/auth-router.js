@@ -3,6 +3,36 @@ const User = require("../users/users-model.js");
 const mw = require("./auth-middleware.js");
 const bcrypt = require("bcryptjs");
 
+router.post("/register", mw.checkUsernameExists, async (req, res, next) => {
+  let user = req.body;
+  let hash = bcrypt.hashSync(user.password, 15);
+  user.password = hash;
+  try {
+    const newUser = await User.add(user);
+    res.status(201).json(newUser);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/login", async (req, res, next) => {
+  let { username, password } = req.body;
+  try {
+    const user = await User.findBy({ username }).first();
+    if (user && bcrypt.compareSync(password, user.password)) {
+      req.session.user = user;
+      res.status(200).json({ message: `Welcome ${user.username}` });
+    } else {
+      const err = new Error();
+      err.statusCode = 401;
+      err.message = "Invalid Creds";
+      next(err);
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
 
 // Require `checkUsernameFree`, `checkUsernameExists` and `checkPasswordLength`
