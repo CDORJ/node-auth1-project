@@ -3,19 +3,24 @@ const User = require("../users/users-model.js");
 const mw = require("./auth-middleware.js");
 const bcrypt = require("bcryptjs");
 
-router.post("/register", mw.checkUsernameExists, async (req, res, next) => {
-  let user = req.body;
-  let hash = bcrypt.hashSync(user.password, 15);
-  user.password = hash;
-  try {
-    const newUser = await User.add(user);
-    res.status(201).json(newUser);
-  } catch (err) {
-    next(err);
+router.post(
+  "/register",
+  mw.checkUsernameFree,
+  mw.checkPasswordLength,
+  async (req, res, next) => {
+    let user = req.body;
+    let hash = bcrypt.hashSync(user.password, 15);
+    user.password = hash;
+    try {
+      const newUser = await User.add(user);
+      res.status(201).json(newUser);
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
-router.post("/login", async (req, res, next) => {
+router.post("/login", mw.checkUsernameExists, async (req, res, next) => {
   let { username, password } = req.body;
   try {
     const user = await User.findBy({ username }).first();
@@ -25,11 +30,25 @@ router.post("/login", async (req, res, next) => {
     } else {
       const err = new Error();
       err.statusCode = 401;
-      err.message = "Invalid Creds";
+      err.message = "Invalid Password";
       next(err);
     }
   } catch (err) {
     next(err);
+  }
+});
+
+router.get("/logout", (req, res, next) => {
+  if (req.session) {
+    req.session.destroy((err) => {
+      if (err) {
+        res.status(200).json({ message: "not logged in", error: err });
+      } else {
+        res.status(200).json({ message: "You are now logged out" });
+      }
+    });
+  } else {
+    res.end();
   }
 });
 
