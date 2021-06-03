@@ -34,7 +34,7 @@ Write the following user access functions inside `api/users/users-model.js`:
 - [x] `find`
 - [x] `findBy`
 - [x] `findById`
-- [ ] `add`
+- [x] `add`
 
 #### 2B - Middleware Functions
 

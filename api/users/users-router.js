@@ -25,10 +25,22 @@ const Users = require("./users-model");
     "message": "You shall not pass!"
   }
  */
-router.use("/", (req, res, next) => {
+router.get("/", (req, res, next) => {
   Users.find()
     .then((users) => {
       res.status(200).json(users);
+    })
+    .catch((error) => {
+      next(error);
+    });
+});
+
+router.get("/:id", (req, res, next) => {
+  const { id } = req.params;
+
+  Users.findById(id)
+    .then((user) => {
+      res.status(200).json(user);
     })
     .catch((error) => {
       next(error);
