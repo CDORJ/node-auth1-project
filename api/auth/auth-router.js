@@ -1,6 +1,13 @@
+const bcrypt = require("bcryptjs");
+const router = require("express").Router();
+const Users = require("../users/users-model");
 // Require `checkUsernameFree`, `checkUsernameExists` and `checkPasswordLength`
 // middleware functions from `auth-middleware.js`. You will need them here!
-
+const {
+  checkUsernameFree,
+  checkUsernameExists,
+  checkPasswordLength,
+} = require("../auth/auth-middleware");
 
 /**
   1 [POST] /api/auth/register { "username": "sue", "password": "1234" }
@@ -24,7 +31,23 @@
     "message": "Password must be longer than 3 chars"
   }
  */
+router.post(
+  "/register",
+  checkPasswordLength,
+  checkUsernameFree,
+  (req, res, next) => {
+    const { username, password } = req.body;
+    const passwordHash = bcrypt.hashSync(password, 8);
 
+    Users.add({ username, password: passwordHash })
+      .then(({ user_id, username }) => {
+        res.status(201).json({ user_id, username });
+      })
+      .catch((error) => {
+        next(error);
+      });
+  }
+);
 
 /**
   2 [POST] /api/auth/login { "username": "sue", "password": "1234" }
@@ -41,7 +64,24 @@
     "message": "Invalid credentials"
   }
  */
+router.post("/login", checkUsernameExists, (req, res, next) => {
+  const { username, password } = req.body;
 
+  Users.findBy({ username })
+    .first()
+    .then((user) => {
+      console.log("User at login's .then ---> ", user);
+      if (user && bcrypt.compareSync(password, user.password)) {
+        req.session.user = user;
+        res.status(200).json({ message: `Welcome ${user.username}` });
+      } else {
+        res.status(401).json({ message: `Invalid credentials` });
+      }
+    })
+    .catch((error) => {
+      next(error);
+    });
+});
 
 /**
   3 [GET] /api/auth/logout
@@ -58,6 +98,21 @@
     "message": "no session"
   }
  */
+router.get("/logout", (req, res, next) => {
+  if (req.session && req.session.user) {
+    req.session.destroy((error) => {
+      if (error) {
+        res.status(500).json({
+          message: `Server error. Try logging out again.`,
+        });
+      } else {
+        res.status(200).json({ message: `logged out` });
+      }
+    });
+  } else {
+    res.status(200).json({ message: `no session` });
+  }
+});
 
- 
 // Don't forget to add the router to the `exports` object so it can be required in other modules
+module.exports = router;

@@ -2,6 +2,7 @@
 const router = require("express").Router();
 
 const Users = require("./users-model");
+const { restricted } = require("../auth/auth-middleware");
 
 /**
   [GET] /api/users
@@ -25,7 +26,7 @@ const Users = require("./users-model");
     "message": "You shall not pass!"
   }
  */
-router.get("/", (req, res, next) => {
+router.get("/", restricted, (req, res, next) => {
   Users.find()
     .then((users) => {
       res.status(200).json(users);
@@ -35,7 +36,7 @@ router.get("/", (req, res, next) => {
     });
 });
 
-router.get("/:id", (req, res, next) => {
+router.get("/:id", restricted, (req, res, next) => {
   const { id } = req.params;
 
   Users.findById(id)
